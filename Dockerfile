@@ -14,8 +14,10 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     ALPINE_GLIBC_I18N_PACKAGE_FILENAME="$ALPINE_GLIBC_PACKAGE_FOLDER/glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
     GCC_LIBS_URL="https://archive.archlinux.org/packages/g/gcc-libs/gcc-libs-10.1.0-2-x86_64.pkg.tar.zst" && \
     GCC_LIBS_SHA256="f80320a03ff73e82271064e4f684cd58d7dbdb07aa06a2c4eea8e0f3c507c45c" && \
-    XZLIB_URL="https://archive.archlinux.org/packages/x/xz/xz-5.2.5-1-x86_64.pkg.tar.zst" && \
-    XZLIB_SHA256="28b115269402c0e4a43a67866f57c256b47b9da515ac69a68625d6bf5635d585" && \
+    UTIL_LINUX_LIBS_URL="https://archive.archlinux.org/packages/u/util-linux-libs/util-linux-libs-2.36-4-x86_64.pkg.tar.zst" && \
+    UTIL_LINUX_LIBS_SHA256="ff2a68c591f32dfed00d333e3adf7fe7a87c59c96432cfbd11b7e508b3a39269" && \
+    XZ_LIB_URL="https://archive.archlinux.org/packages/x/xz/xz-5.2.5-1-x86_64.pkg.tar.zst" && \
+    XZ_LIB_SHA256="28b115269402c0e4a43a67866f57c256b47b9da515ac69a68625d6bf5635d585" && \
     ZLIB_URL="https://archive.archlinux.org/packages/z/zlib/zlib-1%3A1.2.11-3-x86_64.pkg.tar.xz" && \
     ZLIB_SHA256="17aede0b9f8baa789c5aa3f358fbf8c68a5f1228c5e6cba1a5dd34102ef4d4e5" && \
 # build apks
@@ -53,9 +55,17 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib && \
     strip /usr/glibc-compat/lib/libgcc_s.so.* /usr/glibc-compat/lib/libstdc++.so* && \
     \
-# do not download xz for compression
-    curl -LfsS ${XZLIB_URL} -o /tmp/libxz.tar.zst && \
-    echo "${XZLIB_SHA256} */tmp/libxz.tar.zst" | sha256sum -c - && \
+# download util-linux-libs for uuid
+    curl -LfsS ${UTIL_LINUX_LIBS_URL} -o /tmp/util-linux-libs.tar.zst && \
+    echo "${UTIL_LINUX_LIBS_SHA256} */tmp/util-linux-libs.tar.zst" | sha256sum -c - && \
+    mkdir /tmp/util-linux-libs && \
+    zstd -d /tmp/util-linux-libs.tar.zst --output-dir-flat /tmp && \
+    tar -xf /tmp/util-linux-libs.tar -C /tmp/util-linux-libs && \
+    mv /tmp/util-linux-libs/usr/lib/libuuid.so* /usr/glibc-compat/lib && \
+    \
+# download xz for compression
+    curl -LfsS ${XZ_LIB_URL} -o /tmp/libxz.tar.zst && \
+    echo "${XZ_LIB_SHA256} */tmp/libxz.tar.zst" | sha256sum -c - && \
     mkdir /tmp/libxz && \
     zstd -d /tmp/libxz.tar.zst --output-dir-flat /tmp && \
     tar -xf /tmp/libxz.tar -C /tmp/libxz && \
@@ -69,7 +79,11 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
 #    mv /tmp/libz/usr/lib/libz.so* /usr/glibc-compat/lib && \
     \
     apk del --purge .build-dependencies glibc-i18n && \
-    rm -rf /tmp/*.apk /tmp/gcc /tmp/gcc-libs.tar* /tmp/libxz /tmp/libxz.tar* /tmp/libz /tmp/libz.tar.xz /var/cache/apk/* && \
+    rm -rf /tmp/*.apk/var/cache/apk/* && \
+    rm -rf /tmp/gcc /tmp/gcc-libs.tar* && \
+    rm -rf /tmp/util-linux-libs /tmp/util-linux-libs.tar* && \
+    rm -rf /tmp/libxz /tmp/libxz.tar* && \
+    rm -rf /tmp/libz /tmp/libz.tar.xz && \
     \
     echo "Build complete"
 
