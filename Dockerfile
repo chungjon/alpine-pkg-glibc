@@ -14,6 +14,8 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     ALPINE_GLIBC_I18N_PACKAGE_FILENAME="$ALPINE_GLIBC_PACKAGE_FOLDER/glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
     GCC_LIBS_URL="https://archive.archlinux.org/packages/g/gcc-libs/gcc-libs-10.1.0-2-x86_64.pkg.tar.zst" && \
     GCC_LIBS_SHA256="f80320a03ff73e82271064e4f684cd58d7dbdb07aa06a2c4eea8e0f3c507c45c" && \
+    SQLITE_LIB_URL="https://archive.archlinux.org/packages/s/sqlite/sqlite-3.26.0-2-x86_64.pkg.tar.xz " && \
+    SQLITE_LIB_SHA256="6ad34b8ddee00377c803f94e16cb8dbdc2f1aac93d30a8236cbed2417576692b" && \
     UTIL_LINUX_LIBS_URL="https://archive.archlinux.org/packages/u/util-linux-libs/util-linux-libs-2.36-4-x86_64.pkg.tar.zst" && \
     UTIL_LINUX_LIBS_SHA256="ff2a68c591f32dfed00d333e3adf7fe7a87c59c96432cfbd11b7e508b3a39269" && \
     XZ_LIB_URL="https://archive.archlinux.org/packages/x/xz/xz-5.2.5-1-x86_64.pkg.tar.zst" && \
@@ -55,6 +57,13 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib && \
     strip /usr/glibc-compat/lib/libgcc_s.so.* /usr/glibc-compat/lib/libstdc++.so* && \
     \
+# download sqlite
+    curl -LfsS ${SQLITE_LIB_URL} -o /tmp/sqlite.tar.xz && \
+    echo "${SQLITE_LIB_SHA256} */tmp/sqlite.tar.xz" | sha256sum -c - && \
+    mkdir /tmp/sqlite && \
+    tar -xf /tmp/sqlite.tar.xz -C /tmp/sqlite && \
+    mv /tmp/sqlite/usr/lib/libsqlite3.so* /usr/glibc-compat/lib && \
+    \
 # download util-linux-libs for uuid
     curl -LfsS ${UTIL_LINUX_LIBS_URL} -o /tmp/util-linux-libs.tar.zst && \
     echo "${UTIL_LINUX_LIBS_SHA256} */tmp/util-linux-libs.tar.zst" | sha256sum -c - && \
@@ -71,16 +80,17 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     tar -xf /tmp/libxz.tar -C /tmp/libxz && \
     mv /tmp/libxz/usr/lib/liblzma.so* /usr/glibc-compat/lib && \
     \
-# do not download zlib for compression - not required
-#    curl -LfsS ${ZLIB_URL} -o /tmp/libz.tar.xz && \
-#    echo "${ZLIB_SHA256} */tmp/libz.tar.xz" | sha256sum -c - && \
-#    mkdir /tmp/libz && \
-#    tar -xf /tmp/libz.tar.xz -C /tmp/libz && \
-#    mv /tmp/libz/usr/lib/libz.so* /usr/glibc-compat/lib && \
+ # download zlib for compression
+    curl -LfsS ${ZLIB_URL} -o /tmp/libz.tar.xz && \
+    echo "${ZLIB_SHA256} */tmp/libz.tar.xz" | sha256sum -c - && \
+    mkdir /tmp/libz && \
+    tar -xf /tmp/libz.tar.xz -C /tmp/libz && \
+    mv /tmp/libz/usr/lib/libz.so* /usr/glibc-compat/lib && \
     \
     apk del --purge .build-dependencies glibc-i18n && \
     rm -rf /tmp/*.apk/var/cache/apk/* && \
     rm -rf /tmp/gcc /tmp/gcc-libs.tar* && \
+    rm -rf /tmp/sqlite /tmp/sqlite.tar.xz && \
     rm -rf /tmp/util-linux-libs /tmp/util-linux-libs.tar* && \
     rm -rf /tmp/libxz /tmp/libxz.tar* && \
     rm -rf /tmp/libz /tmp/libz.tar.xz && \
