@@ -14,6 +14,8 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     ALPINE_GLIBC_I18N_PACKAGE_FILENAME="$ALPINE_GLIBC_PACKAGE_FOLDER/glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
     GCC_LIBS_URL="https://archive.archlinux.org/packages/g/gcc-libs/gcc-libs-10.1.0-2-x86_64.pkg.tar.zst" && \
     GCC_LIBS_SHA256="f80320a03ff73e82271064e4f684cd58d7dbdb07aa06a2c4eea8e0f3c507c45c" && \
+    CURL_LIB_URL="https://archive.archlinux.org/packages/c/curl/curl-7.74.0-1-x86_64.pkg.tar.zst" && \
+    CURL_LIB_SHA256="32ec97f15a27bb2141c3db018695827370984a288f3ced000206b38deaec7daa" && \
     SQLITE_LIB_URL="https://archive.archlinux.org/packages/s/sqlite/sqlite-3.26.0-2-x86_64.pkg.tar.xz " && \
     SQLITE_LIB_SHA256="6ad34b8ddee00377c803f94e16cb8dbdc2f1aac93d30a8236cbed2417576692b" && \
     UTIL_LINUX_LIBS_URL="https://archive.archlinux.org/packages/u/util-linux-libs/util-linux-libs-2.36-4-x86_64.pkg.tar.zst" && \
@@ -56,6 +58,14 @@ RUN ALPINE_GLIBC_PACKAGE_VERSION="2.32-r0" && \
     tar -xf /tmp/gcc-libs.tar -C /tmp/gcc && \
     mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib && \
     strip /usr/glibc-compat/lib/libgcc_s.so.* /usr/glibc-compat/lib/libstdc++.so* && \
+    \
+# download curl
+    curl -LfsS ${CURL_LIB_URL} -o /tmp/curl.tar.zst && \
+    echo "${CURL_LIB_SHA256} */tmp/curl.tar.zst" | sha256sum -c - && \
+    mkdir /tmp/curl && \
+    zstd -d /tmp/curl.tar.zst --output-dir-flat /tmp && \
+    tar -xf /tmp/curl.tar -C /tmp/curl && \
+    mv /tmp/curl/usr/lib/libcurl.so* /usr/glibc-compat/lib && \
     \
 # download sqlite
     curl -LfsS ${SQLITE_LIB_URL} -o /tmp/sqlite.tar.xz && \
