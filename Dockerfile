@@ -1,9 +1,31 @@
+# Build custom glibc binary package
+FROM ubuntu:20.04
+ENV DEBIAN_FRONTEND=noninteractive \
+    GLIBC_VERSION=2.32 \
+    PREFIX_DIR=/usr/glibc-compat
+RUN apt-get -q update \
+	&& apt-get -qy install \
+		bison \
+		build-essential \
+		gawk \
+		gettext \
+		openssl \
+		python3 \
+		texinfo \
+		wget
+COPY /glibc-build/configparams /glibc-build/configparams
+COPY /glibc-build/builder /builder
+RUN ["/bin/bash", "-c", "/builder"]
+
+# Build Alpine Linux package to run binaries linked against glibc
 FROM alpine:3.12
 
 ENV LANG=C.UTF-8
 
 ENV APP_HOME /alpine-pkg-glibc
 RUN mkdir $APP_HOME
+
+COPY --from=0 /glibc-bin-2.32.tar.gz $APP_HOME/glibc-bin-2.32-0-x86_64.tar.gz
 
 # install GNU libc (aka glibc) and set C.UTF-8 locale as default.
 COPY APKBUILD glibc-bin.trigger ld.so.conf nsswitch.conf $APP_HOME/
